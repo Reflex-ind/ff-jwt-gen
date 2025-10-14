@@ -146,7 +146,7 @@ async function fetchTokenFor(entry){
   const password = entry.password || entry.pass || entry.pw || entry.Password;
   if(!uid || !password) throw new Error('Missing uid or password');
 
-  const base = 'http://api.nationcheats.shop/token';
+  const base = 'https://api.nationcheats.shop/token';
   const url = `${base}?uid=${encodeURIComponent(uid)}&password=${encodeURIComponent(password)}`;
 
   // 4 second delay before each request
