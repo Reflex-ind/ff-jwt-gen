@@ -23,11 +23,11 @@
 <body>
   <div class="card">
     <h1>Token Extractor</h1>
-    <p>Select a JSON file with entries like <code>[ {"uid":"...","password":"..."}, ... ]</code>. This tool will call the API for each entry and produce a downloadable JSON containing tokens.</p>
+    <p>Select a JSON or TXT file. JSON: entries like <code>[ {"uid":"...","password":"..."}, ... ]</code>. TXT: lines like <code>uid password</code> (e.g., 3994059093 2150B9374CD59EB7C073F00529CF19730FADA395CDEBBEFCB815163752F8E6AD). This tool will call the API for each entry and produce a downloadable JSON containing tokens.</p>
 
     <div class="row">
-      <label class="file-label" for="fileInput">📁 Select input JSON</label>
-      <input id="fileInput" type="file" accept=".json,application/json" style="display:none">
+      <label class="file-label" for="fileInput">📁 Select input JSON or TXT</label>
+      <input id="fileInput" type="file" accept=".json,.txt,application/json,text/plain" style="display:none">
       <input id="outName" type="text" placeholder="Output filename (eg: tokens.json)" value="tokens.json">
       <button id="startBtn" class="secondary">Start</button>
     </div>
@@ -97,16 +97,31 @@ fileInput.addEventListener('change', async (ev)=>{
   try{
     const text = await f.text();
     inputData = JSON.parse(text);
-    appendLog('Parsed JSON — entries:', Array.isArray(inputData)?inputData.length:'(not array)');
+    appendLog('Parsed as JSON — entries:', Array.isArray(inputData)?inputData.length:'(not array)');
   }catch(e){
-    appendLog('Failed to parse JSON:', e.message);
-    inputData = null;
-    status.textContent = 'Invalid JSON';
+    // Try parsing as TXT if JSON fails
+    appendLog('Failed to parse as JSON:', e.message, '— Attempting TXT parse...');
+    try {
+      const text = await f.text();
+      const lines = text.split('\n').filter(l => l.trim());
+      inputData = lines.map(line => {
+        const parts = line.trim().split(/\s+/);
+        if (parts.length >= 2) {
+          return {uid: parts[0], password: parts[1]};
+        }
+        return null;
+      }).filter(Boolean);
+      appendLog('Parsed as TXT — entries:', inputData.length);
+    } catch(txtErr) {
+      appendLog('Failed to parse as TXT:', txtErr.message);
+      inputData = null;
+      status.textContent = 'Invalid file';
+    }
   }
 });
 
 previewBtn.addEventListener('click', ()=>{
-  if(!inputData) return alert('No JSON loaded or parsing failed.');
+  if(!inputData) return alert('No file loaded or parsing failed.');
   const sample = JSON.stringify(inputData.slice(0,10), null, 2);
   alert('Preview (first 10 items):\n\n' + sample);
 });
@@ -180,8 +195,8 @@ async function fetchTokenFor(entry){
 }
 
 startBtn.addEventListener('click', async ()=>{
-  if(!inputData) return alert('Please select and load a valid JSON file first.');
-  if(!Array.isArray(inputData)) return alert('Input JSON must be an array of objects.');
+  if(!inputData) return alert('Please select and load a valid JSON or TXT file first.');
+  if(!Array.isArray(inputData)) return alert('Input must be an array of objects.');
   const outName = (outNameInput.value || 'tokens.json').trim() || 'tokens.json';
   const concurrency = Number(concurrencySelect.value) || 5;
 
