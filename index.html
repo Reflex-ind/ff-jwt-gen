@@ -161,11 +161,10 @@ async function fetchTokenFor(entry){
   const password = entry.password || entry.pass || entry.pw || entry.Password;
   if(!uid || !password) throw new Error('Missing uid or password');
 
-  const base = 'https://api.nationcheats.shop/token';
-  const url = `${base}?uid=${encodeURIComponent(uid)}&password=${encodeURIComponent(password)}`;
+  const url = `https://api.nationcheats.shop/token?uid=${encodeURIComponent(uid)}&password=${encodeURIComponent(password)}`;
 
   // 4 second delay before each request
-  await sleep(4000);
+  await sleep(3000);
 
   const resp = await fetch(url, {method:'GET'});
   if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
