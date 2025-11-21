@@ -51,14 +51,14 @@
 
       <select id="region">
         <option value="IND">India (IND)</option>
-        <option value="BD">Bangladesh (BD)</option>
-        <option value="PK">Pakistan (PK)</option>
-        <option value="OTHER">Other</option>
-        <option value="BR">Brazil (BR)</option>
-        <option value="ID">Indonesia (ID)</option>
-        <option value="TH">Thailand (TH)</option>
-        <option value="VN">Vietnam (VN)</option>
-        <option value="MY">Malaysia (MY)</option>
+        <option value="AG">Bangladesh (BD)</option>
+        <option value="AG">Pakistan (PK)</option>
+        <option value="AG">Other</option>
+        <option value="NX">Brazil (BR)</option>
+        <option value="AG">Indonesia (ID)</option>
+        <option value="AG">Thailand (TH)</option>
+        <option value="AG">Vietnam (VN)</option>
+        <option value="AG">Malaysia (MY)</option>
       </select>
 
       <input type="number" id="minLevel" placeholder="Min Level (e.g. 50)" value="50" min="1" max="100">
@@ -166,7 +166,7 @@ checkBtn.onclick = async () => {
           output2.textContent += `❌ ${uid} | Level ${level} (below ${minLevel})\n`;
         }
       } else {
-        output2.textContent += `⚠️ ${uid} | API Error ${res.status}\n`;
+        output2.textContent += `⚠️ ${uid} | Uid Not Available At Server ${res.status}\n`;
       }
     } catch (err) {
       output2.textContent += `🌐 ${uid} | Network/Error\n`;
