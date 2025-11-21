@@ -3,236 +3,103 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Token Extractor — Nation Cheats</title>
+  <title>Garena Guest Extractor</title>
+
   <style>
-    body{font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial;margin:0;background:#0f1724;color:#e6eef8;display:flex;align-items:center;justify-content:center;min-height:100vh}
-    .card{background:#0b1220;padding:24px;border-radius:12px;box-shadow:0 10px 30px rgba(2,6,23,.6);width:760px;max-width:95%}
-    h1{margin:0 0 8px;font-size:20px}
-    p{margin:0 0 16px;color:#9fb0d0}
-    .row{display:flex;gap:8px;align-items:center;margin-bottom:12px}
-    input[type=text]{flex:1;padding:10px;border-radius:8px;border:1px solid #1f2a44;background:#071029;color:#e6eef8}
-    button{padding:10px 14px;border-radius:8px;border:none;background:#0ea5a3;color:#042022;cursor:pointer}
-    button.secondary{background:#1f2a44;color:#cfe9ff}
-    pre{background:#071029;padding:12px;border-radius:8px;max-height:220px;overflow:auto;color:#9fb0d0}
-    .progress{height:12px;background:#081025;border-radius:6px;overflow:hidden}
-    .bar{height:100%;width:0%;background:linear-gradient(90deg,#06b6d4,#06d6a0)}
-    .small{font-size:13px;color:#9fb0d0}
-    label.file-label{display:inline-block;padding:10px 14px;border-radius:8px;background:#0b1220;border:1px dashed #1f2a44;cursor:pointer}
+    body{
+      font-family: Inter, system-ui;
+      background: #0f1724;
+      color:#e6eef8;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      min-height:100vh;
+      margin:0;
+    }
+    .card{
+      width:750px;
+      max-width:95%;
+      background:#0b1220;
+      padding:24px;
+      border-radius:12px;
+      box-shadow:0 10px 30px rgba(2,6,23,.6);
+    }
+    h1{margin:0 0 10px;font-size:22px}
+    p{color:#9fb0d0;font-size:14px}
+    .row{display:flex;gap:10px;margin-top:15px}
+    button{
+      padding:10px 14px;
+      border:none;
+      border-radius:8px;
+      background:#0ea5a3;
+      color:#042022;
+      cursor:pointer;
+    }
+    .secondary{background:#1f2a44;color:#cfe9ff}
+    input[type=file]{display:none}
+    pre{
+      background:#071029;
+      padding:14px;
+      border-radius:8px;
+      margin-top:18px;
+      max-height:260px;
+      overflow:auto;
+      color:#9fb0d0;
+      font-size:13px;
+    }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>Token Extractor</h1>
-    <p>Select a JSON or TXT file. JSON: entries like <code>[ {"uid":"...","password":"..."}, ... ]</code>. TXT: lines like <code>uid password</code> (e.g., 3994059093 2150B9374CD59EB7C073F00529CF19730FADA395CDEBBEFCB815163752F8E6AD). This tool will call the API for each entry and produce a downloadable JSON containing tokens.</p>
 
-    <div class="row">
-      <label class="file-label" for="fileInput">📁 Select input JSON or TXT</label>
-      <input id="fileInput" type="file" accept=".json,.txt,application/json,text/plain" style="display:none">
-      <input id="outName" type="text" placeholder="Output filename (eg: tokens.json)" value="tokens.json">
-      <button id="startBtn" class="secondary">Start</button>
-    </div>
+<div class="card">
+  <h1>Garena UID / Password Extractor</h1>
+  <p>Upload any JSON/TXT file containing guest_account_info and extract UID + Password in bulk.</p>
 
-    <div class="row">
-      <button id="previewBtn">Preview input</button>
-      <button id="downloadSample">Download sample input</button>
-      <div style="flex:1"></div>
-      <select id="concurrency">
-        <option value="1">Concurrency: 1</option>
-        <option value="5" selected>Concurrency: 5</option>
-        <option value="10">Concurrency: 10</option>
-        <option value="20">Concurrency: 20</option>
-        <option value="50">Concurrency: 50</option>
-      </select>
-    </div>
-
-    <div style="margin-bottom:8px">
-      <div class="progress" aria-hidden>
-        <div class="bar" id="bar"></div>
-      </div>
-      <div class="row" style="margin-top:8px">
-        <div class="small" id="status">No file loaded</div>
-        <div style="flex:1"></div>
-        <div class="small" id="counts"></div>
-      </div>
-    </div>
-
-    <pre id="log">Ready.
-
-Notes:
-- If requests fail with CORS errors, the API blocks cross-origin requests. Use a server-side proxy or a public CORS proxy.
-- This is a client-side tool. Do not run with credentials you don't own.</pre>
+  <div class="row">
+      <label for="fileInput" class="secondary" style="padding:10px 14px;border-radius:8px;cursor:pointer;">
+        📁 Select File
+      </label>
+      <input id="fileInput" type="file" accept=".txt,.json">
+      <button id="extractBtn">Extract</button>
   </div>
 
+  <pre id="output">Waiting for input...</pre>
+</div>
+
 <script>
-const fileInput = document.getElementById('fileInput');
-const startBtn = document.getElementById('startBtn');
-const previewBtn = document.getElementById('previewBtn');
-const downloadSample = document.getElementById('downloadSample');
-const outNameInput = document.getElementById('outName');
-const bar = document.getElementById('bar');
-const status = document.getElementById('status');
-const counts = document.getElementById('counts');
-const log = document.getElementById('log');
-const concurrencySelect = document.getElementById('concurrency');
+const fileInput = document.getElementById("fileInput");
+const extractBtn = document.getElementById("extractBtn");
+const output = document.getElementById("output");
 
-let inputData = null;
-let selectedFileName = '';
+extractBtn.onclick = async () => {
+    const file = fileInput.files[0];
+    if (!file) return alert("Please select a file!");
 
-function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+    const text = await file.text();
+    const lines = text.split("\n").filter(l => l.trim());
 
-// helper logger
-function appendLog(...args){
-  const t = new Date().toLocaleTimeString();
-  log.textContent += `\n[${t}] ` + args.join(' ');
-  log.scrollTop = log.scrollHeight;
-}
+    let result = [];
 
-document.querySelector('.file-label').addEventListener('click', ()=> fileInput.click());
-fileInput.addEventListener('change', async (ev)=>{
-  const f = ev.target.files && ev.target.files[0];
-  if(!f) return;
-  selectedFileName = f.name;
-  status.textContent = `Loaded: ${f.name}`;
-  appendLog('Loaded file:', f.name, `(${Math.round(f.size/1024)} KB)`);
-  try{
-    const text = await f.text();
-    inputData = JSON.parse(text);
-    appendLog('Parsed as JSON — entries:', Array.isArray(inputData)?inputData.length:'(not array)');
-  }catch(e){
-    // Try parsing as TXT if JSON fails
-    appendLog('Failed to parse as JSON:', e.message, '— Attempting TXT parse...');
-    try {
-      const text = await f.text();
-      const lines = text.split('\n').filter(l => l.trim());
-      inputData = lines.map(line => {
-        const parts = line.trim().split(/\s+/);
-        if (parts.length >= 2) {
-          return {uid: parts[0], password: parts[1]};
-        }
-        return null;
-      }).filter(Boolean);
-      appendLog('Parsed as TXT — entries:', inputData.length);
-    } catch(txtErr) {
-      appendLog('Failed to parse as TXT:', txtErr.message);
-      inputData = null;
-      status.textContent = 'Invalid file';
+    for (const line of lines) {
+        try {
+            const cleaned = line.substring(line.indexOf("{"));
+            const json = JSON.parse(cleaned);
+
+            const info = json.guest_account_info;
+            if (!info) continue;
+
+            const uid = info["com.garena.msdk.guest_uid"];
+            const password = info["com.garena.msdk.guest_password"];
+
+            if (uid && password) {
+                result.push({ uid, password });
+            }
+        } catch (e) {}
     }
-  }
-});
 
-previewBtn.addEventListener('click', ()=>{
-  if(!inputData) return alert('No file loaded or parsing failed.');
-  const sample = JSON.stringify(inputData.slice(0,10), null, 2);
-  alert('Preview (first 10 items):\n\n' + sample);
-});
-
-downloadSample.addEventListener('click', ()=>{
-  const sample = [
-    {"uid":"4103677597","password":"BE281AB62B3F3A7FE98CE28881C0D55F6256151257D10DC068686FBF462CEF9C"},
-    {"uid":"4103730521","password":"4182D9E3ECDEDC503C159AD940D230A8224BBB288C8DE03417AE28A985F056E5"}
-  ];
-  const blob = new Blob([JSON.stringify(sample, null, 2)], {type:'application/json'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'sample-input.json';
-  document.body.appendChild(a); a.click(); a.remove();
-});
-
-function pMap(inputs, mapper, {concurrency = 5} = {}){
-  let i = 0;
-  const results = [];
-  const executing = [];
-  const enqueue = ()=>{
-    if(i === inputs.length) return Promise.resolve();
-    const idx = i++;
-    const p = Promise.resolve().then(()=> mapper(inputs[idx], idx));
-    results[idx] = p;
-    const e = p.then(()=> executing.splice(executing.indexOf(e),1));
-    executing.push(e);
-    let r = Promise.resolve();
-    if(executing.length >= concurrency) r = Promise.race(executing);
-    return r.then(()=> enqueue());
-  };
-  return enqueue().then(()=> Promise.all(results));
-}
-
-async function fetchTokenFor(entry){
-  const uid = entry.uid || entry.Uid || entry.U || entry.id || entry.account; 
-  const password = entry.password || entry.pass || entry.pw || entry.Password;
-  if(!uid || !password) throw new Error('Missing uid or password');
-
-  const url = `https://api.nationcheats.shop/token?uid=${encodeURIComponent(uid)}&password=${encodeURIComponent(password)}`;
-
-  // 4 second delay before each request
-  await sleep(3000);
-
-  const resp = await fetch(url, {method:'GET'});
-  if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
-  const data = await resp.json();
-
-  const tokenKeys = ['token','accessToken','auth','auth_token','jwt'];
-  for(const k of tokenKeys){
-    if(data && typeof data === 'object' && data[k]) return data[k];
-  }
-  function findToken(obj){
-    if(!obj) return null;
-    if(typeof obj === 'string' && obj.split('.').length===3) return obj;
-    if(typeof obj === 'object'){
-      for(const v of Object.values(obj)){
-        const t = findToken(v);
-        if(t) return t;
-      }
-    }
-    return null;
-  }
-  const found = findToken(data);
-  if(found) return found;
-  for(const v of Object.values(data || {})){
-    if(typeof v === 'string' && v.length>100) return v;
-  }
-  throw new Error('Token not found in response');
-}
-
-startBtn.addEventListener('click', async ()=>{
-  if(!inputData) return alert('Please select and load a valid JSON or TXT file first.');
-  if(!Array.isArray(inputData)) return alert('Input must be an array of objects.');
-  const outName = (outNameInput.value || 'tokens.json').trim() || 'tokens.json';
-  const concurrency = Number(concurrencySelect.value) || 5;
-
-  status.textContent = `Working — ${inputData.length} items`;
-  appendLog('Starting token extraction — total items:', inputData.length, 'concurrency:', concurrency);
-
-  let done = 0, success = 0, failed = 0;
-  bar.style.width = '0%';
-
-  const results = await pMap(inputData, async (entry, idx)=>{
-    try{
-      const t = await fetchTokenFor(entry);
-      success++; done++;
-      appendLog(`#${idx} ✓ token length:`, (t||'').length);
-      counts.textContent = `done: ${done} / ${inputData.length} | success: ${success} | failed: ${failed}`;
-      bar.style.width = `${Math.round((done/inputData.length)*100)}%`;
-      return {token: t};
-    }catch(e){
-      failed++; done++;
-      appendLog(`#${idx} ✗ error:`, e.message);
-      counts.textContent = `done: ${done} / ${inputData.length} | success: ${success} | failed: ${failed}`;
-      bar.style.width = `${Math.round((done/inputData.length)*100)}%`;
-      return null;
-    }
-  }, {concurrency});
-
-  const tokens = results.filter(Boolean);
-  appendLog('Finished. Success:', tokens.length, 'Failed:', inputData.length - tokens.length);
-  status.textContent = `Finished — success: ${tokens.length} failed: ${inputData.length - tokens.length}`;
-
-  const blob = new Blob([JSON.stringify(tokens, null, 2)], {type:'application/json'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = outName;
-  document.body.appendChild(a); a.click(); a.remove();
-  appendLog('Downloaded', outName);
-});
+    output.textContent = JSON.stringify(result, null, 2);
+};
 </script>
+
 </body>
 </html>
